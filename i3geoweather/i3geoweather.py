@@ -11,7 +11,6 @@ import requests
 
 from daemon import Daemon
 
-
 geo_url = "http://freegeoip.net/json/"
 payload = {"lat": 48.2499, "lon": 11.63,
            "appid": "62d5bdef1ef5e8dfccb382765b499577"}
@@ -138,8 +137,8 @@ class I3Geoweather(Daemon):
                                     if val is True)
                     thermometer = self.thermometers[therm_idx]
                     output = "{0:.15s} {1:s} {2:.1f}°C\n".format(location,
-                                                                thermometer,
-                                                                temp)
+                                                                 thermometer,
+                                                                 temp)
                     fd, tmpname = tempfile.mkstemp()
                     os.write(fd, output.encode())
                     os.close(fd)
