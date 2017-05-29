@@ -30,16 +30,11 @@ class I3Geoweather(Daemon):
         if not os.path.exists(base_dir):
             os.mkdir(base_dir)
         self.base_dir = base_dir
-        logging.basicConfig(filename=os.path.join(self.base_dir,
-                                                  "i3geoweather.log"),
-                            filemode='w',
-                            level=log_level,
-                            format='%(asctime)s %(levelname)s: %(message)s',
-                            )
+        self.log_level = log_level
         pidfile = os.path.join(base_dir, "i3geoweather.pid")
         super(I3Geoweather, self).__init__(pidfile)
         self.thermometers = ["", "", "", "", ""]
-        self.thresholds = [-270, 0, 10, 20, 30]
+        self.thresholds = [-270, 0, 10, 20, 28]
         self.appid = "62d5bdef1ef5e8dfccb382765b499577"
 
     def write_cache(self, fname, d):
@@ -124,6 +119,12 @@ class I3Geoweather(Daemon):
         return x - 273.25
 
     def run(self):
+        logging.basicConfig(filename=os.path.join(self.base_dir,
+                                                  "i3geoweather.log"),
+                            filemode='w',
+                            level=self.log_level,
+                            format='%(asctime)s %(levelname)s: %(message)s',
+                            )
         logging.debug("i3geoweather started")
         fname = os.path.join(self.base_dir, "i3geoweather.txt")
         while True:
