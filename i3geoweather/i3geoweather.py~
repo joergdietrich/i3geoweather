@@ -1,0 +1,182 @@
+import argparse
+import logging
+import json
+import os
+import tempfile
+import time
+import traceback
+
+import requests
+
+from daemon import Daemon
+
+
+geo_url = "http://freegeoip.net/json/"
+payload = {"lat": 48.2499, "lon": 11.63,
+           "appid": "62d5bdef1ef5e8dfccb382765b499577"}
+
+weather_url = "http://api.openweathermap.org/data/2.5/weather"
+
+retry_interval = 10 * 60 # 10 minutes
+location_timeout = 3 * 3600 # 3 hours
+weather_timeout = 3600 # 1 hour
+wait_failure = 60
+wait_success = 300
+
+
+class I3Geoweather(Daemon):
+    def __init__(self, base_dir, log_level=logging.DEBUG):
+        if not os.path.exists(base_dir):
+            os.mkdir(base_dir)
+        self.base_dir = base_dir
+        logging.basicConfig(filename=os.path.join(self.base_dir,
+                                                  "i3geoweather.log"),
+                            filemode='w',
+                            level=log_level,
+                            format='%(asctime)s %(levelname)s:%(message)s',
+        )
+        pidfile = os.path.join(base_dir, "i3geoweather.pid")
+        super(I3Geoweather, self).__init__(pidfile)
+        logging.debug("i3geoweather started")
+        self.thermometers = ["", "", "", "", ""]
+        self.appid = "62d5bdef1ef5e8dfccb382765b499577"
+
+
+    def write_cache(self, fname, d):
+        with open(fname, "w") as f:
+            print(d)
+            json.dump(d, f)
+
+
+    def read_cache(self, fname):
+        now = time.time()
+        try:
+            age = now - os.path.getmtime(fname)
+            with open(fname, "r") as f:
+                d = json.load(f)
+        except:
+            return None, -1
+        return d, age
+
+
+    def read_geo_cache(self, fname):
+        try:
+            with open(fname, "r") as f:
+                d = json.load(f)
+                if isinstance(d, dict):
+                    logging.debug("using cached location")
+                    return d['latitude'], d['longitude']
+                else:
+                    logging.error("geolocation cache seems to be invalid.")
+                    logging.error("cache content", d, "will be deleted.")
+                    os.remove(geo_cache)
+                    return (0, 0)
+        except:
+            logging.error("Could not read geo cache file %s", fname)
+            logging.error(traceback.format_exc())
+        return (0, 0)
+
+
+    def geolocate(self):
+        geo_cache = os.path.join(self.base_dir, "location.cache")
+        if os.path.exists(geo_cache):
+            age = os.path.getmtime(geo_cache)
+            logging.debug("read geolocation cache file age %d" % age)
+            if age < retry_interval:
+                return self.read_geo_cache(geo_cache)
+        try:
+            r = requests.get(geo_url)
+            r.raise_for_status()
+            d = r.json()
+            if d['latitude'] != 0 and d['longitude'] != 0:
+                self.write_cache(geo_cache, d)
+                msg = "retrieved location {:f}, {:f} for ip {:s}".format(
+                    d['latitude'], d['longitude'], d['ip'])
+                logging.info(msg)
+                return d['latitude'], d['longitude']
+            else:
+                msg = "received invalid location 0, 0 for ip {:s}".format(
+                    d['ip'])
+                logging.info(msg)
+        except:
+            logging.error("error receiving location")
+            logging.error(traceback.format_exc())
+            return (0, 0)
+        return d['latitude'], d['longitude']
+
+
+    def get_weather(self, lat, lon):
+        weather_cache = os.path.join(self.base_dir, "weather.cache")
+        if os.path.exists(weather_cache):
+            age = os.path.getmtime(weather_cache)
+            if age < retry_interval:
+                if isinstance(d, dict):
+                    return d['name'], d['main']['temp']
+                else:
+                    return None, None
+        try:
+            payload = {"lat": lat, "lon": lon, "appid": self.appid}
+            r = requests.get(weather_url, payload)
+            r.raise_for_status()
+            d_new = r.json()
+            if isinstance(d['name'], str) and \
+               isinstance(d['main']['temp'], float):
+                self.write_cache(weather_cache, d_new)
+                self.weather_age = 0
+                return d_new['name'], d_new['main']['temp']
+            elif isinstance(d, dict):
+                return d['name'], d['main']['temp']
+            return None, None
+        except:
+            return None, None
+
+    def kelvin2celsus(self, x):
+        return x - 273.25
+
+
+    def run(self):
+        fname = os.path.join(self.base_dir, "i3geoweather.txt")
+        while True:
+            try:
+                lat, lon = self.geolocate()
+                location, temp = self.get_weather(lat, lon)
+                if location is not None and temp is not None:
+                    temp = self.kelvin2celsus(temp)
+                    output = "{0:s} {1:.1f}°C\n".format(location, temp)
+                    fd, tmpname = tempfile.mkstemp()
+                    os.write(fd, output.encode())
+                    os.close(fd)
+                    os.rename(tmpname, fname)
+                    sleep = wait_success
+                else:
+                    sleep = wait_failure
+                time.sleep(sleep)
+            except:
+                logging.CRITICAL("Unhandled exception")
+                logging.CRITICAL(traceback.format_exc())
+                fd, tmpname = tempfile.mkstemp()
+                os.write(fd, "i3geoweather error\n".encode())
+                os.close(fd)
+                os.rename(tmpname, fname)
+                logging.CRITICAL("i3geoweather stopping")
+                self.stop()
+                logging.CRITICAL("i3geoweather stopped")
+                break
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", help="run in daemon mode",
+                        action="store_true", dest="daemon")
+    args = parser.parse_args()
+
+    base_dir = os.path.join(os.getenv("HOME"), ".i3geoweather")
+    i3geoweather = I3Geoweather(base_dir)
+    if args.daemon is True:
+        i3geoweather.start()
+    else:
+        i3geoweather.run()
+    if args.daemon is True:
+        i3geoweather.stop()
+
