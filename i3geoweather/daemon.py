@@ -1,4 +1,8 @@
-"""Generic linux daemon base class for python 3.x."""
+"""Generic linux daemon base class for python 3.x.
+
+author unknown. Found this following a stackoverflow search, which
+linked to archive.org
+"""
 
 import sys, os, time, atexit, signal
 
@@ -10,7 +14,7 @@ class Daemon:
     def __init__(self, pidfile): self.pidfile = pidfile
 
     def daemonize(self):
-        """Deamonize class. UNIX double fork mechanism."""
+        """Daemonize class. UNIX double fork mechanism."""
 
         try:
             pid = os.fork()
