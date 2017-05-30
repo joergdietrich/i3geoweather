@@ -1,5 +1,6 @@
 import argparse
 import logging
+import logging.handlers
 import json
 import os
 import sys
@@ -43,6 +44,7 @@ class I3Geoweather(Daemon):
     def read_cache(self, fname, mode):
         if mode not in ['location', 'weather']:
             raise ValueError("mode must be weather or location")
+        logging.info("reading cached %s" % mode)
         try:
             with open(fname, "r") as f:
                 d = json.load(f)
@@ -74,16 +76,17 @@ class I3Geoweather(Daemon):
                 self.write_cache(geo_cache, d)
                 msg = "retrieved location {latitude}, {longitude} for ip " \
                       "{ip}".format(**d)
+                logging.info("updated location")
                 logging.debug(msg)
                 return d['latitude'], d['longitude']
             else:
                 msg = "received invalid location 0, 0 for ip {:s}".format(
                     d['ip'])
-                logging.error(msg)
-                return (None, None)
+                logging.warn(msg)
+                return self.read_cache(geo_cache, "location")
         except:
             logging.exception("error receiving location")
-            return (None, None)
+            return self.read_cache(geo_cache, "location")
 
     def get_weather(self, lat, lon):
         weather_cache = os.path.join(self.base_dir, "weather.cache")
@@ -103,6 +106,7 @@ class I3Geoweather(Daemon):
                isinstance(d['main']['temp'], float):
                 self.write_cache(weather_cache, d)
                 msg = "retrieved weather information {:s}".format(str(d))
+                logging.info("updated weather")
                 logging.debug(msg)
                 return d['name'], d['main']['temp']
             else:
@@ -118,13 +122,16 @@ class I3Geoweather(Daemon):
         return x - 273.25
 
     def run(self):
-        logging.basicConfig(filename=os.path.join(self.base_dir,
-                                                  "i3geoweather.log"),
-                            filemode='w',
-                            level=self.log_level,
+        log_file = os.path.join(self.base_dir, "i3geoweather.log")
+        handler = logging.handlers.RotatingFileHandler(log_file,
+                                                       maxBytes=20480,
+                                                       backupCount=2)
+        logging.basicConfig(level=self.log_level,
                             format='%(asctime)s %(levelname)s: %(message)s',
+                            handlers=(handler, ),
                             )
-        logging.debug("i3geoweather started")
+
+        logging.info("i3geoweather started")
         fname = os.path.join(self.base_dir, "i3geoweather.txt")
         while True:
             try:
@@ -143,9 +150,11 @@ class I3Geoweather(Daemon):
                     os.write(fd, output.encode())
                     os.close(fd)
                     os.rename(tmpname, fname)
+                    logging.info(output[:-1])
                     sleep = wait_success
                 else:
                     sleep = wait_failure
+                logging.debug("next update attempt in %d seconds" % sleep)
                 time.sleep(sleep)
             except:
                 logging.CRITICAL("Unhandled exception")
@@ -162,14 +171,19 @@ class I3Geoweather(Daemon):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", help="run in daemon mode",
+    parser.add_argument("-d", "--daemon", help="run in daemon mode",
                         action="store_true", dest="daemon")
-    parser.add_argument("-s", help="stop daemon", action="store_true",
-                        dest="stop")
+    parser.add_argument("-s", "--stop", help="stop daemon",
+                        action="store_true", dest="stop")
+    parser.add_argument('--verbose', '-v', help="increase verbosity",
+                        action='count', dest="verbose", default=0)
     args = parser.parse_args()
 
+    log_levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    log_level = log_levels[min(len(log_levels) - 1, args.verbose)]
     base_dir = os.path.join(os.getenv("HOME"), ".i3geoweather")
-    i3geoweather = I3Geoweather(base_dir)
+
+    i3geoweather = I3Geoweather(base_dir, log_level)
     if args.stop is True:
         i3geoweather.stop()
         sys.exit(0)
