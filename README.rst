@@ -32,7 +32,10 @@ Depending on your system you may need to call pip3 instead of pip
 Dependencies
 ------------
 
-i3geoweather depends on the Python requests_ library.
+i3geoweather depends on the Python requests_ library. i3geoweather output uses
+`FontAwesome <http://fontawesome.io>`_ for its output. You should download the
+free FontAwesome zip file and copy fontawesome-webfont.ttf to your ~/.fonts/
+directory. 
 
 Usage
 -----
@@ -59,6 +62,9 @@ A typical i3blocks.conf entry may look like this::
 Command line options:
 
 - -d or --daemon run as background process
+- -l or --location force a location by specifying a comma separated
+  latitude/longitude pair, e.g., -l "50.0126, 7.996". North and east are
+  positive. 
 - -r or --restart restart background process
 - -s or --stop stop running background process
 - -v increase verbosity of logging to ~/.i3geoweather/i3geoweather.log. Can be
