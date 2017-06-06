@@ -3,8 +3,13 @@ i3geoweather
 
 This blocklet provides temperature information for the i3blocks status bar
 often used in the i3 window manager. It attempts to determine your location
-based on your IP address using the freegeoip.net API. Based on the location it
-retrieves weather information from the free openweathermap.org API.
+based on your IP address using the `freegeoip.net <http://freegeoip.net>`_
+API. Based on the location it retrieves weather information from the free
+`openweathermap.org API`__.
+
+.. _openweathermap: http://api.openweathermap.org/
+
+__ openweathermap_
 
 .. image:: docs/i3geoweather.jpg
    :width: 800px
@@ -21,7 +26,8 @@ The easiest way to install i3geoweather is to use pip::
   
   $ pip install i3geoweather
 
-
+Depending on your system you may need to call pip3 instead of pip
+  
 
 Dependencies
 ------------
@@ -37,10 +43,14 @@ option) and periodically updates weather information by writing to
 
 Start i3geoweather from your i3 configuration file::
 
-  exec_always i3geoweather.py -d
+  exec_always i3geoweather -d
 
+You may need to use the full path to i3geoweather, e.g., for an installation
+with pip install --user ...::
 
-A typical i3blocks.conf entry may look like this:::
+  exec_always ~/.local/bin/i3geoweather -d
+  
+A typical i3blocks.conf entry may look like this::
 
   [weather]
   interval=repeat
@@ -52,7 +62,8 @@ Command line options:
 - -r or --restart restart background process
 - -s or --stop stop running background process
 - -v increase verbosity of logging to ~/.i3geoweather/i3geoweather.log. Can be
-  used up to three times
+  used up to three times. Using -v twice logs informational
+  messages. Debugging output is produced when -v is used three times.
      
 
 
