@@ -30,7 +30,7 @@ assert(WEATHER_TIMEOUT > RETRY_INTERVAL)
 
 
 class I3Geoweather(Daemon):
-    def __init__(self, base_dir, log_level=logging.DEBUG):
+    def __init__(self, base_dir, log_level=logging.DEBUG, location=None):
         if not os.path.exists(base_dir):
             os.mkdir(base_dir)
         self.base_dir = base_dir
@@ -39,8 +39,13 @@ class I3Geoweather(Daemon):
         super(I3Geoweather, self).__init__(pidfile)
         self.thermometers = ["", "", "", "", ""]
         self.thresholds = [-270, 0, 10, 20, 28]
-        self.latitude = None
-        self.longitude = None
+        if location is not None:
+            self.latitude, self.longitude = map(float, location.split(","))
+            self.forced_location = True
+        else:
+            self.latitude = None
+            self.longitude = None
+            self.forced_location = False
         self.location = None
         self.temperature = None
         self.geo_cache = None
@@ -61,6 +66,13 @@ class I3Geoweather(Daemon):
             mtime = os.path.getmtime(fname)
             age = time.time() - mtime
             logging.debug("found %s cache file age %d" % (mode, age))
+        else:
+            logging.debug("cache file %s does not exist" % fname)
+            if mode == "weather":
+                return (None, None, self.weather_time)
+            else:
+                return (None, None, self.location_time)
+
         logging.info("reading cached %s" % mode)
         try:
             with open(fname, "r") as f:
@@ -82,6 +94,11 @@ class I3Geoweather(Daemon):
             return (None, None, self.location_time)
 
     def geolocate(self):
+        if self.forced_location is True:
+            logging.info("using forced location %f %f" %
+                         (self.latitude, self.longitude))
+            self.location_time = time.time() - LOCATION_TIMEOUT + 60
+            return self.latitude, self.longitude
         location_age = time.time() - self.location_time
         if location_age < RETRY_INTERVAL:
             logging.debug("location is still young (%d seconds)" %
@@ -174,10 +191,11 @@ class I3Geoweather(Daemon):
 
     def read_caches(self):
         logging.info("i3geoweather started")
-        self.geo_cache = os.path.join(self.base_dir, "location.cache")
-        self.latitude, self.longitude, \
-            self.location_time = self.read_cache(self.geo_cache,
-                                                 "location")
+        if self.forced_location is False:
+            self.geo_cache = os.path.join(self.base_dir, "location.cache")
+            self.latitude, self.longitude, \
+                self.location_time = self.read_cache(self.geo_cache,
+                                                     "location")
         self.weather_cache = os.path.join(self.base_dir, "weather.cache")
         self.location, self.temperature, \
             self.weather_time = self.read_cache(self.weather_cache,
@@ -233,6 +251,7 @@ def my_argparser():
                         action="store_true", dest="restart")
     parser.add_argument('--verbose', '-v', help="increase verbosity",
                         action='count', dest="verbose", default=0)
+    parser.add_argument('-l', '--location', help="force location (lat, lon)")
     args = parser.parse_args()
     return args
 
@@ -243,7 +262,7 @@ def main():
     log_level = log_levels[min(len(log_levels) - 1, args.verbose)]
     base_dir = os.path.join(os.getenv("HOME"), ".i3geoweather")
 
-    i3geoweather = I3Geoweather(base_dir, log_level)
+    i3geoweather = I3Geoweather(base_dir, log_level, args.location)
     if args.stop is True:
         i3geoweather.stop()
         sys.exit(0)
