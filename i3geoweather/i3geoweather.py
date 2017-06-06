@@ -12,7 +12,7 @@ import traceback
 
 import requests
 
-from daemon import Daemon
+from i3geoweather.daemon import Daemon
 
 geo_url = "http://freegeoip.net/json/"
 weather_url = "http://api.openweathermap.org/data/2.5/weather"
@@ -22,6 +22,8 @@ LOCATION_TIMEOUT = 3 * 3600  # 3 hours
 WEATHER_TIMEOUT = 3600       # 1 hour
 WAIT_FAILURE = 60            # 1 minute
 WAIT_SUCCESS = 300           # 5 minutes
+COLOR_NORMAL = '#FFFFFF'
+COLOR_TIMEOUT = '#505050'
 
 assert(LOCATION_TIMEOUT > RETRY_INTERVAL)
 assert(WEATHER_TIMEOUT > RETRY_INTERVAL)
@@ -63,7 +65,7 @@ class I3Geoweather(Daemon):
         try:
             with open(fname, "r") as f:
                 d = json.load(f)
-                logging.debug("using cached %s: %s" % (mode, str(d)))
+                logging.debug("reading cached %s: %s" % (mode, str(d)))
                 if mode == "location":
                     return d['latitude'], d['longitude'], mtime
                 else:
@@ -95,8 +97,7 @@ class I3Geoweather(Daemon):
                 self.location_time = time.time()
                 msg = "retrieved location {latitude}, {longitude} for ip " \
                       "{ip}".format(**d)
-                logging.info("updated location")
-                logging.debug(msg)
+                logging.info(msg)
                 return d['latitude'], d['longitude']
             else:
                 msg = "received invalid location 0, 0 for ip {:s}".format(
@@ -111,7 +112,8 @@ class I3Geoweather(Daemon):
         if lat is None or lon is None:
             return (None, None)
         weather_age = time.time() - self.weather_time
-        if weather_age < RETRY_INTERVAL:
+        if weather_age < RETRY_INTERVAL and \
+           self.weather_time >= self.location_time:
             logging.debug("weather is still young (%d seconds)" % weather_age)
             return self.location, self.temperature
         try:
@@ -150,9 +152,19 @@ class I3Geoweather(Daemon):
             logging.error("length of thresholds %d does not match "
                           "thermometer %d" % (len(self.thresholds),
                                               len(self.thermometers)))
-        long_output = "{:.15s} {:s} {:.1f}°C\n".format(location, thermometer,
-                                                       temp)
-        short_output = "{:s} {:.1f}°C\n".format(thermometer, temp)
+        now = time.time()
+        location_age = now - self.location_time
+        loc_color = COLOR_NORMAL if location_age < LOCATION_TIMEOUT \
+            else COLOR_TIMEOUT
+        weather_age = now - self.weather_time
+        weather_color = COLOR_NORMAL if weather_age < WEATHER_TIMEOUT \
+            else COLOR_TIMEOUT
+        long_output = "<span color='{:s}'>{:.15s}</span> " \
+                      "<span color='{:s}'>{:s} {:.1f}°C</span>\n".format(
+                          loc_color, location, weather_color, thermometer,
+                          temp)
+        short_output = "<span color='{:s}'>{:s} {:.1f}°C</span>\n".format(
+            weather_color, thermometer, temp)
         fd, tmpname = tempfile.mkstemp()
         os.write(fd, long_output.encode())
         os.write(fd, short_output.encode())
@@ -174,7 +186,7 @@ class I3Geoweather(Daemon):
     def run(self):
         log_file = os.path.join(self.base_dir, "i3geoweather.log")
         handler = logging.handlers.RotatingFileHandler(log_file,
-                                                       maxBytes=20480,
+                                                       maxBytes=200000,
                                                        backupCount=2)
         logging.basicConfig(level=self.log_level,
                             format='%(asctime)s %(levelname)s: %(message)s',
@@ -225,7 +237,7 @@ def my_argparser():
     return args
 
 
-if __name__ == "__main__":
+def main():
     args = my_argparser()
     log_levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     log_level = log_levels[min(len(log_levels) - 1, args.verbose)]
@@ -243,3 +255,7 @@ if __name__ == "__main__":
         i3geoweather.run()
     if args.daemon is True:
         i3geoweather.stop()
+
+
+if __name__ == "__main__":
+    main()
