@@ -49,8 +49,8 @@ setup(
         'Development Status :: 4 - Beta',
 
         # Indicate who your project is intended for
-        'Intended Audience :: End Users/Desktop'
-        'Topic :: Utilities'
+        'Intended Audience :: End Users/Desktop',
+        'Topic :: Utilities',
 
         # Pick your license as you wish (should match "license" above)
         'License :: OSI Approved :: MIT License',
