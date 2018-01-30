@@ -103,3 +103,7 @@ ENV/
 # emacs save files
 *~
 
+#Project
+workspace.xml
+tasks.xml
+
