@@ -6,6 +6,7 @@ linked to archive.org
 
 import sys, os, time, atexit, signal
 
+
 class Daemon:
     """A generic daemon class.
 
@@ -96,7 +97,7 @@ class Daemon:
             message = "pidfile {0} does not exist. " + \
                     "Daemon not running?\n"
             sys.stderr.write(message.format(self.pidfile))
-            return # not an error in a restart
+            return  # not an error in a restart
 
         # Try killing the daemon process
         try:
@@ -109,7 +110,7 @@ class Daemon:
                 if os.path.exists(self.pidfile):
                     os.remove(self.pidfile)
             else:
-                print (str(err.args))
+                print(str(err.args))
                 sys.exit(1)
 
     def restart(self):
@@ -122,4 +123,3 @@ class Daemon:
 
         It will be called after the process has been daemonized by 
         start() or restart()."""
-

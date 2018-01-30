@@ -55,7 +55,8 @@ class I3Geoweather(Daemon):
         self.weather_time = now - WEATHER_TIMEOUT - 1
         self.appid = "62d5bdef1ef5e8dfccb382765b499577"
 
-    def write_cache(self, fname, d):
+    @staticmethod
+    def write_cache(fname, d):
         with open(fname, "w") as f:
             json.dump(d, f)
 
@@ -69,9 +70,9 @@ class I3Geoweather(Daemon):
         else:
             logging.debug("cache file %s does not exist" % fname)
             if mode == "weather":
-                return (None, None, self.weather_time)
+                return None, None, self.weather_time
             else:
-                return (None, None, self.location_time)
+                return None, None, self.location_time
 
         logging.info("reading cached %s" % mode)
         try:
@@ -89,9 +90,9 @@ class I3Geoweather(Daemon):
                           (mode, fname))
             os.remove(fname)
         if mode == "weather":
-            return (None, None, self.weather_time)
+            return None, None, self.weather_time
         else:
-            return (None, None, self.location_time)
+            return None, None, self.location_time
 
     def geolocate(self):
         if self.forced_location is True:
@@ -105,7 +106,7 @@ class I3Geoweather(Daemon):
                           location_age)
             return self.latitude, self.longitude
         try:
-            r = requests.get(geo_url)
+            r = requests.get(geo_url, timeout=30)
             r.raise_for_status()
             d = r.json()
             logging.debug("geolocation response %s" % str(d))
@@ -119,11 +120,11 @@ class I3Geoweather(Daemon):
             else:
                 msg = "received invalid location 0, 0 for ip {:s}".format(
                     d['ip'])
-                logging.warn(msg)
+                logging.warning(msg)
                 return self.latitude, self.longitude
         except:
             logging.exception("error receiving location")
-            return self.latitude, self.longitude
+            return None, None
 
     def get_weather(self, lat, lon):
         if lat is None or lon is None:
@@ -136,7 +137,7 @@ class I3Geoweather(Daemon):
         try:
             payload = {"lat": lat, "lon": lon, "appid": self.appid,
                        "units": "metric"}
-            r = requests.get(weather_url, payload)
+            r = requests.get(weather_url, payload, timeout=30)
             r.raise_for_status()
             d = r.json()
             logging.debug("weather response %s" % str(d))
@@ -156,7 +157,7 @@ class I3Geoweather(Daemon):
                 return self.location, self.temperature
         except:
             logging.exception("error receiving weather")
-            return self.location, self.temperature
+            return None, None
 
     def write_weather(self, fname, location, temp):
         idx = [temp >= x for x in self.thresholds]
@@ -210,6 +211,7 @@ class I3Geoweather(Daemon):
                             format='%(asctime)s %(levelname)s: %(message)s',
                             handlers=(handler, ),
                             )
+        logging.debug("i3geoweather starting")
         self.read_caches()
         fname = os.path.join(self.base_dir, "i3geoweather.txt")
         while True:
@@ -221,11 +223,11 @@ class I3Geoweather(Daemon):
                                                   self.longitude)
                 if location is not None and temp is not None:
                     self.location, self.temperature = (location, temp)
-                if self.location is not None and self.temperature is not None:
-                    self.write_weather(fname, self.location, self.temperature)
                     sleep = WAIT_SUCCESS
                 else:
                     sleep = WAIT_FAILURE
+                if self.location is not None and self.temperature is not None:
+                    self.write_weather(fname, self.location, self.temperature)
                 logging.debug("next update attempt in %d seconds" % sleep)
                 time.sleep(sleep)
             except:
