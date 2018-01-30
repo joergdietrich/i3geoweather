@@ -106,7 +106,7 @@ class I3Geoweather(Daemon):
                           location_age)
             return self.latitude, self.longitude
         try:
-            r = requests.get(geo_url)
+            r = requests.get(geo_url, timeout=30)
             r.raise_for_status()
             d = r.json()
             logging.debug("geolocation response %s" % str(d))
@@ -137,7 +137,7 @@ class I3Geoweather(Daemon):
         try:
             payload = {"lat": lat, "lon": lon, "appid": self.appid,
                        "units": "metric"}
-            r = requests.get(weather_url, payload)
+            r = requests.get(weather_url, payload, timeout=30)
             r.raise_for_status()
             d = r.json()
             logging.debug("weather response %s" % str(d))
