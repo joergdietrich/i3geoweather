@@ -124,7 +124,7 @@ class I3Geoweather(Daemon):
                 return self.latitude, self.longitude
         except:
             logging.exception("error receiving location")
-            return self.latitude, self.longitude
+            return None, None
 
     def get_weather(self, lat, lon):
         if lat is None or lon is None:
@@ -157,7 +157,7 @@ class I3Geoweather(Daemon):
                 return self.location, self.temperature
         except:
             logging.exception("error receiving weather")
-            return self.location, self.temperature
+            return None, None
 
     def write_weather(self, fname, location, temp):
         idx = [temp >= x for x in self.thresholds]
@@ -223,11 +223,11 @@ class I3Geoweather(Daemon):
                                                   self.longitude)
                 if location is not None and temp is not None:
                     self.location, self.temperature = (location, temp)
-                if self.location is not None and self.temperature is not None:
-                    self.write_weather(fname, self.location, self.temperature)
                     sleep = WAIT_SUCCESS
                 else:
                     sleep = WAIT_FAILURE
+                if self.location is not None and self.temperature is not None:
+                    self.write_weather(fname, self.location, self.temperature)
                 logging.debug("next update attempt in %d seconds" % sleep)
                 time.sleep(sleep)
             except:
