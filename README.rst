@@ -3,7 +3,7 @@ i3geoweather
 
 This blocklet provides temperature information for the i3blocks status bar
 often used in the i3 window manager. It attempts to determine your location
-based on your IP address using the `freegeoip.net <http://freegeoip.net>`_
+based on your IP address using the `ipstack.com <http://ipstack.com>`_
 API. Based on the location it retrieves weather information from the free
 `openweathermap.org API`__.
 

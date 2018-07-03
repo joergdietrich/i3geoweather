@@ -14,7 +14,7 @@ import requests
 
 from i3geoweather.daemon import Daemon
 
-geo_url = "http://freegeoip.net/json/"
+geo_url = 'http://api.ipstack.com/check'
 weather_url = "http://api.openweathermap.org/data/2.5/weather"
 
 RETRY_INTERVAL = 900         # 15 minutes
@@ -54,6 +54,7 @@ class I3Geoweather(Daemon):
         self.location_time = now - LOCATION_TIMEOUT - 1
         self.weather_time = now - WEATHER_TIMEOUT - 1
         self.appid = "62d5bdef1ef5e8dfccb382765b499577"
+        self.ipstackid = '32118778a8be2ee3a01f37f7995cadf2'
 
     @staticmethod
     def write_cache(fname, d):
@@ -106,7 +107,9 @@ class I3Geoweather(Daemon):
                           location_age)
             return self.latitude, self.longitude
         try:
-            r = requests.get(geo_url, timeout=30)
+            payload = {'access_key': self.ipstackid,
+                      }
+            r = requests.get(geo_url, payload, timeout=30)
             r.raise_for_status()
             d = r.json()
             logging.debug("geolocation response %s" % str(d))
