@@ -14,7 +14,7 @@ import requests
 
 from i3geoweather.daemon import Daemon
 
-geo_url = 'http://api.ipstack.com/check'
+geo_url = 'https://ipinfo.io/json'
 weather_url = "http://api.openweathermap.org/data/2.5/weather"
 
 RETRY_INTERVAL = 900         # 15 minutes
@@ -54,7 +54,7 @@ class I3Geoweather(Daemon):
         self.location_time = now - LOCATION_TIMEOUT - 1
         self.weather_time = now - WEATHER_TIMEOUT - 1
         self.appid = "62d5bdef1ef5e8dfccb382765b499577"
-        self.ipstackid = '32118778a8be2ee3a01f37f7995cadf2'
+        self.ipinfoid = '45e890f2de284d'
 
     @staticmethod
     def write_cache(fname, d):
@@ -107,12 +107,17 @@ class I3Geoweather(Daemon):
                           location_age)
             return self.latitude, self.longitude
         try:
-            payload = {'access_key': self.ipstackid,
+            payload = {'token': self.ipinfoid,
                       }
             r = requests.get(geo_url, payload, timeout=30)
             r.raise_for_status()
             d = r.json()
             logging.debug("geolocation response %s" % str(d))
+            try:
+                d["latitude"], d["longitude"] = d["loc"].split(",")
+            except KeyError:
+                logging.error("Could not determine location %s" % str(d))
+                d["latitude"], d["longitude"] = (0, 0)
             if d['latitude'] != 0 and d['longitude'] != 0:
                 self.write_cache(self.geo_cache, d)
                 self.location_time = time.time()
