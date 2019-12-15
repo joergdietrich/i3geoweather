@@ -3,7 +3,7 @@ i3geoweather
 
 This blocklet provides temperature information for the i3blocks status bar
 often used in the i3 window manager. It attempts to determine your location
-based on your IP address using the `ipstack.com <http://ipstack.com>`_
+based on your IP address using the `ipinfo.io <http://ipinfo.io>`_
 API. Based on the location it retrieves weather information from the free
 `openweathermap.org API`__.
 
@@ -14,7 +14,7 @@ __ openweathermap_
 .. image:: docs/i3geoweather.jpg
    :width: 800px
    :target: docs/i3geoweather.jpg
-	   
+
 i3geoweather is a pure Python 3 program. No attempt to make it compatible with
 Python 2 has been or will be made. It is time to switch!
 
@@ -76,7 +76,7 @@ Command line options:
 Author
 ------
 
-Jörg Dietrich astro@joergdietrich.com
+Jörg Dietrich joerg@joergdietrich.com
 
 Contributing
 ------------
