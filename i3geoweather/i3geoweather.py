@@ -54,7 +54,7 @@ class I3Geoweather(Daemon):
         self.location_time = now - LOCATION_TIMEOUT - 1
         self.weather_time = now - WEATHER_TIMEOUT - 1
         self.appid = "62d5bdef1ef5e8dfccb382765b499577"
-        self.ipinfoid = '45e890f2de284d'
+        self.ipinfoid = 'cb301189efbbbb'
 
     @staticmethod
     def write_cache(fname, d):
