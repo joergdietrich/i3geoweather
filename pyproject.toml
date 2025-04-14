@@ -1,0 +1,46 @@
+[project]
+name = "i3geoweather"
+dynamic = ["version"]
+authors = [
+  {name = "Jörg Dietrich", email = "joerg@joergdietrich.com"},
+  ]
+maintainers = [
+  {name = "Jörg Dietrich", email = "joerg@joergdietrich.com"}
+]
+license = "MIT"
+description = "Provide temperature information to i3blocks based on geolocated IP address"
+requires-python = ">=3.8"
+readme = "README.md"
+dependencies = [
+    "requests>=2.22.0",
+]
+
+classifiers=[
+        # How mature is this project? Common values are
+        #   3 - Alpha
+        #   4 - Beta
+        #   5 - Production/Stable
+        'Development Status :: 5 - Production/Stable',
+
+        # Indicate who your project is intended for
+        'Intended Audience :: End Users/Desktop',
+        'Topic :: Utilities',
+
+        'Programming Language :: Python',
+    ]
+
+# What does your project relate to?
+keywords=['i3', 'i3wm', 'i3blocks', 'i3blocks-scripts', 'weather-app', 'geolocation', 'weather']
+
+[project.urls]
+Homepage = 'https://github.com/joergdietrich/i3geoweather'
+
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+i3geoweather = "i3geoweather.i3geoweather:main"
+
+[tool.uv]
+package = false
