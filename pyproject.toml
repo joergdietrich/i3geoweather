@@ -44,3 +44,6 @@ i3geoweather = "i3geoweather.i3geoweather:main"
 
 [tool.uv]
 package = false
+
+[tool.setuptools.dynamic]
+version = {attr = "i3geoweather.__version__"} 
