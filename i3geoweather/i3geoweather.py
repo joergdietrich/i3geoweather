@@ -245,15 +245,15 @@ class I3Geoweather(Daemon):
                 logging.debug("next update attempt in %d seconds" % sleep)
                 time.sleep(sleep)
             except:
-                logging.CRITICAL("Unhandled exception")
-                logging.CRITICAL(traceback.format_exc())
+                logging.critical("Unhandled exception")
+                logging.critical(traceback.format_exc())
                 fd, tmpname = tempfile.mkstemp()
                 os.write(fd, "i3geoweather error\n".encode())
                 os.close(fd)
                 os.rename(tmpname, fname)
-                logging.CRITICAL("i3geoweather stopping")
+                logging.critical("i3geoweather stopping")
                 self.stop()
-                logging.CRITICAL("i3geoweather stopped")
+                logging.critical("i3geoweather stopped")
                 break
 
 
