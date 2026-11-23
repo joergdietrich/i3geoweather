@@ -46,10 +46,10 @@ Start i3geoweather from your i3 configuration file:
 
     exec_always i3geoweather -d
 
-i3 starts commands with its own, often minimal, PATH, so use the full
-path to i3geoweather. The location above applies to installations with
-pip install \--user \... or uv tool install. Run `which i3geoweather`
-in a shell to find yours.
+i3 starts commands with its own, often minimal, PATH. If i3geoweather
+is not found, for example after pip install \--user \... or uv tool
+install, make sure its directory is on that PATH or call it by its full
+path. Run `which i3geoweather` in a shell to find it.
 
 If a previous daemon is still running, -d leaves it alone and exits
 with a message on stderr, which i3 does not show. A pidfile left behind
