@@ -44,12 +44,19 @@ to \~/.i3geoweather/i3geoweather.txt.
 
 Start i3geoweather from your i3 configuration file:
 
-    exec_always i3geoweather -d
-
-You may need to use the full path to i3geoweather, e.g., for an
-installation with pip install \--user \...:
-
     exec_always ~/.local/bin/i3geoweather -d
+
+i3 starts commands with its own, often minimal, PATH, so the examples
+use the full path to i3geoweather. This is where pip install \--user
+and uv tool install put it. If yours is elsewhere, run
+`which i3geoweather` in a shell to find it.
+
+If a previous daemon is still running, -d leaves it alone and exits
+with a message on stderr, which i3 does not show. A pidfile left behind
+by a crashed daemon is detected and replaced. To restart the daemon on
+every i3 reload, use -r instead:
+
+    exec_always ~/.local/bin/i3geoweather -r
 
 A typical i3blocks.conf entry may look like this:
 
