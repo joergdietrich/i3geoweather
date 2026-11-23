@@ -14,17 +14,19 @@ compatible with Python 2 has been or will be made. It is time to switch!
 
 ## Installation
 
-The easiest way to install i3geoweather is to use
-[uv](https://docs.astral.sh/uv/), which places the `i3geoweather`
-executable in `~/.local/bin`:
+i3geoweather is published on [PyPI](https://pypi.org/project/i3geoweather/).
+Install it with pip:
+
+    $ pip install --user i3geoweather
+
+Depending on your system you may need to call pip3 instead of pip.
+
+If you use [uv](https://docs.astral.sh/uv/), install it as an isolated
+tool instead:
 
     $ uv tool install i3geoweather
 
-Alternatively, use pip:
-
-    $ pip install i3geoweather
-
-Depending on your system you may need to call pip3 instead of pip
+Both methods place the `i3geoweather` executable in `~/.local/bin`.
 
 ## Dependencies
 
