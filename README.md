@@ -44,7 +44,7 @@ to \~/.i3geoweather/i3geoweather.txt.
 
 Start i3geoweather from your i3 configuration file:
 
-    exec_always ~/.local/bin/i3geoweather -d
+    exec_always i3geoweather -d
 
 i3 starts commands with its own, often minimal, PATH, so use the full
 path to i3geoweather. The location above applies to installations with
@@ -56,7 +56,7 @@ with a message on stderr, which i3 does not show. A pidfile left behind
 by a crashed daemon is detected and replaced. To restart the daemon on
 every i3 reload, use -r instead:
 
-    exec_always ~/.local/bin/i3geoweather -r
+    exec_always i3geoweather -r
 
 A typical i3blocks.conf entry may look like this:
 
